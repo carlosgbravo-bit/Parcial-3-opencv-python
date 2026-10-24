@@ -138,3 +138,4 @@ class VolumenDicom:
             )
 
             self.matrices_pixeles.append(matriz_ampliada)
+            self.volumen = np.stack(self.matrices_pixeles, axis=0)

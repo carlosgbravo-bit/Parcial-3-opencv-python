@@ -26,3 +26,5 @@ print(
     "Dimensiones de la primera matriz:",
     estudio.matrices_pixeles[0].shape
 )
+print("Dimensiones del volumen 3D:", estudio.volumen.shape)
+print("Tipo de dato del volumen:", estudio.volumen.dtype)
