@@ -28,3 +28,8 @@ print(
 )
 print("Dimensiones del volumen 3D:", estudio.volumen.shape)
 print("Tipo de dato del volumen:", estudio.volumen.dtype)
+
+estudio.corregirAngulo(15)
+
+print("Dimensiones del volumen corregido:", estudio.volumen_corregido.shape)
+print("Dimensiones del volumen original:", estudio.volumen.shape)

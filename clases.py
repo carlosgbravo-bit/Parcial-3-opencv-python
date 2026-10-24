@@ -139,3 +139,33 @@ class VolumenDicom:
 
             self.matrices_pixeles.append(matriz_ampliada)
             self.volumen = np.stack(self.matrices_pixeles, axis=0)
+
+    def corregirAngulo(self, grados):
+        if self.volumen is None:
+            raise ValueError("Primero debe construirse el volumen 3D")
+
+        numero_cortes, filas, columnas = self.volumen.shape
+
+        volumen_rotado = []
+
+        centro = (columnas / 2, filas / 2)
+
+        matriz_rotacion = cv2.getRotationMatrix2D(
+            centro,
+            grados,
+            1.0
+        )
+
+        for corte in self.volumen:
+            corte_rotado = cv2.warpAffine(
+                corte,
+                matriz_rotacion,
+                (columnas, filas)
+            )
+
+            volumen_rotado.append(corte_rotado)
+
+        self.volumen_corregido = np.stack(
+            volumen_rotado,
+            axis=0
+        )
