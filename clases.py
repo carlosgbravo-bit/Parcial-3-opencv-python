@@ -1,0 +1,122 @@
+
+import os
+import cv2
+import numpy as np
+import pydicom
+
+
+class VolumenDicom:
+    def __init__(self, carpeta, paciente=None):
+        self.carpeta = carpeta
+        self.paciente = paciente
+
+        # Informacion del estudio
+        self.nombre_paciente = None
+        self.modalidad = None
+        self.filas = None
+        self.columnas = None
+        self.pixel_spacing = None
+        self.slice_thickness = None
+
+        # Datos de los cortes
+        self.datasets = []
+        self.matrices_pixeles = []
+
+        # Volumenes que construiremos despues
+        self.volumen = None
+        self.volumen_corregido = None
+
+        self.cargar_carpeta()
+
+    def cargar_carpeta(self):
+        if not os.path.isdir(self.carpeta):
+            raise FileNotFoundError(
+                f"No existe la carpeta: {self.carpeta}"
+            )
+
+        
+        archivos = []
+
+        for raiz, carpetas, nombres_archivos in os.walk(self.carpeta):
+            for nombre_archivo in nombres_archivos:
+                ruta = os.path.join(raiz, nombre_archivo)
+
+                try:
+                    dataset = pydicom.dcmread(ruta)
+
+                    if hasattr(dataset, "PixelData"):
+                        archivos.append((ruta, dataset))
+
+                except Exception:
+                    continue
+
+
+        if not archivos:
+            raise ValueError(
+                f"No se encontraron archivos DICOM con pixeles "
+                f"en {self.carpeta}"
+            )
+
+        # Ordenar los cortes por su posicion espacial cuando sea posible
+        if all(
+            hasattr(ds, "ImagePositionPatient")
+            for _, ds in archivos
+        ):
+            archivos.sort(
+                key=lambda elemento:
+                float(elemento[1].ImagePositionPatient[2])
+            )
+        elif all(
+            hasattr(ds, "InstanceNumber")
+            for _, ds in archivos
+        ):
+            archivos.sort(
+                key=lambda elemento:
+                int(elemento[1].InstanceNumber)
+            )
+        else:
+            archivos.sort(key=lambda elemento: elemento[0])
+
+        
+        # Filtrar los archivos si se selecciono un paciente
+        if self.paciente is not None:
+            archivos = [
+                (ruta, dataset)
+                for ruta, dataset in archivos
+                if str(getattr(dataset, "PatientID", "")) == str(self.paciente)
+            ]
+
+            if not archivos:
+                raise ValueError(
+                    f"No se encontraron archivos para el paciente {self.paciente}"
+                )
+
+
+        self.datasets = [ds for _, ds in archivos]
+
+        # Extraer la informacion del primer corte
+        primer_dataset = self.datasets[0]
+
+        self.nombre_paciente = str(
+            getattr(primer_dataset, "PatientName", "Desconocido")
+        )
+        self.modalidad = getattr(
+            primer_dataset, "Modality", "Desconocida"
+        )
+        self.filas = int(primer_dataset.Rows)
+        self.columnas = int(primer_dataset.Columns)
+
+        self.pixel_spacing = tuple(
+            float(valor)
+            for valor in primer_dataset.PixelSpacing
+        )
+
+        self.slice_thickness = float(
+            primer_dataset.SliceThickness
+        )
+
+        # Extraer la matriz de pixeles de cada corte
+        self.matrices_pixeles = [
+            dataset.pixel_array
+            for dataset in self.datasets
+        ]
