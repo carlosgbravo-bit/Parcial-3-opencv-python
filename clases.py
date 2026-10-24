@@ -110,6 +110,12 @@ class VolumenDicom:
             float(valor)
             for valor in primer_dataset.PixelSpacing
         )
+        
+        # Espaciado efectivo despues de duplicar el tamaño
+        self.pixel_spacing_escalado = tuple(
+            valor / 2
+            for valor in self.pixel_spacing
+        )
 
         self.slice_thickness = float(
             primer_dataset.SliceThickness
