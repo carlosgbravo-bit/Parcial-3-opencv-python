@@ -116,7 +116,19 @@ class VolumenDicom:
         )
 
         # Extraer la matriz de pixeles de cada corte
-        self.matrices_pixeles = [
-            dataset.pixel_array
-            for dataset in self.datasets
-        ]
+        
+        # Extraer y duplicar el tamaño de cada corte
+        self.matrices_pixeles = []
+
+        for dataset in self.datasets:
+            matriz = dataset.pixel_array
+
+            matriz_ampliada = cv2.resize(
+                matriz,
+                None,
+                fx=2,
+                fy=2,
+                interpolation=cv2.INTER_LINEAR
+            )
+
+            self.matrices_pixeles.append(matriz_ampliada)
