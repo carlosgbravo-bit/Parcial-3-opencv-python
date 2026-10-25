@@ -1,35 +1,60 @@
+from clases import VolumenDicom, ProcesadorVolumen
 
-import cv2
-import numpy as np
+volumen = None
+procesador = None
 
-from clases import VolumenDicom
+while True:
+    print("\n===== MENU =====")
+    print("1. Cargar carpeta DICOM (PPMI / Sarcoma / T2)")
+    print("2. Corregir angulo")
+    print("3. Ecualizar un corte")
+    print("4. Segmentar un corte")
+    print("5. Salir")
+    opcion = input("Elige una opcion: ")
 
-print("Proyecto de OpenCV iniciado")
+    try:
+        if opcion == "1":
+            nombre = input("Carpeta (PPMI, Sarcoma o T2): ")
+            volumen = VolumenDicom("datos/" + nombre)
+            procesador = ProcesadorVolumen(volumen)
+            print("Paciente:", volumen.nombre_paciente)
+            print("Modalidad:", volumen.modalidad)
+            print("Filas x columnas:", volumen.filas, volumen.columnas)
+            print("Pixel spacing:", volumen.pixel_spacing)
+            print("Grosor de corte:", volumen.slice_thickness)
+            print("Forma del volumen:", volumen.volumen.shape)
 
-print("Versión de OpenCV:", cv2.__version__)
-print("Versión de NumPy:", np.__version__)
+        elif opcion == "2":
+            if volumen is None:
+                print("Primero carga una carpeta (opcion 1).")
+            else:
+                grados = float(input("Angulo en grados: "))
+                volumen.corregirAngulo(grados)
+                print("Listo, volumen corregido.")
 
-print("\n--- Prueba de archivos DICOM ---")
+        elif opcion == "3":
+            if volumen is None:
+                print("Primero carga una carpeta (opcion 1).")
+            else:
+                print("Cortes disponibles: 0 a", volumen.volumen.shape[0] - 1)
+                i = int(input("Numero de corte: "))
+                procesador.ecualizar(i)
 
-estudio = VolumenDicom("datos/PPMI", paciente="3105")
+        elif opcion == "4":
+            if volumen is None:
+                print("Primero carga una carpeta (opcion 1).")
+            else:
+                plano = input("Plano (transversal, coronal, sagital): ")
+                i = int(input("Indice del corte: "))
+                umbral = int(input("Umbral (0-255, prueba 60): "))
+                k = int(input("Tamano del kernel (ej. 5): "))
+                it = int(input("Iteraciones (ej. 2): "))
+                procesador.segmentar(plano, i, umbral, k, it)
 
-print("Nombre del paciente:", estudio.nombre_paciente)
-print("Modalidad:", estudio.modalidad)
-print("Filas:", estudio.filas)
-print("Columnas:", estudio.columnas)
-print("Pixel spacing:", estudio.pixel_spacing)
-print("Pixel spacing escalado:", estudio.pixel_spacing_escalado)
-print("Espesor del corte:", estudio.slice_thickness)
-print("Cantidad de cortes:", len(estudio.matrices_pixeles))
+        elif opcion == "5":
+            break
+        else:
+            print("Opcion no valida.")
 
-print(
-    "Dimensiones de la primera matriz:",
-    estudio.matrices_pixeles[0].shape
-)
-print("Dimensiones del volumen 3D:", estudio.volumen.shape)
-print("Tipo de dato del volumen:", estudio.volumen.dtype)
-
-estudio.corregirAngulo(15)
-
-print("Dimensiones del volumen corregido:", estudio.volumen_corregido.shape)
-print("Dimensiones del volumen original:", estudio.volumen.shape)
+    except Exception as e:
+        print("Error:", e)
